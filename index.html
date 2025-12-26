@@ -68,6 +68,103 @@
             transition: background-color 0.3s, color 0.3s;
         }
 
+        /* --- FANCY PRELOADER --- */
+        #preloader {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: var(--bg-color);
+            z-index: 99999;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            flex-direction: column;
+            transition: opacity 0.8s cubic-bezier(0.65, 0, 0.35, 1), visibility 0.8s;
+        }
+
+        .loader-content {
+            position: relative;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+        }
+
+        /* Animated Infinity SVG */
+        .infinity-svg {
+            width: 100px;
+            height: 60px;
+            overflow: visible;
+        }
+
+        .infinity-path {
+            fill: none;
+            stroke: var(--primary);
+            stroke-width: 4;
+            stroke-dasharray: 300;
+            stroke-dashoffset: 300;
+            stroke-linecap: round;
+            animation: drawInfinity 2.5s ease-in-out infinite alternate;
+            filter: drop-shadow(0 0 4px rgba(67, 97, 238, 0.4));
+        }
+
+        @keyframes drawInfinity {
+            0% { stroke-dashoffset: 300; }
+            100% { stroke-dashoffset: 0; }
+        }
+
+        .loader-text {
+            margin-top: 25px;
+            font-family: 'Outfit', sans-serif;
+            font-weight: 600;
+            font-size: 1.5rem;
+            color: var(--text-main);
+            opacity: 0;
+            animation: fadeInUp 0.8s ease-out 0.2s forwards;
+            letter-spacing: -0.02em;
+        }
+
+        .loader-progress-track {
+            width: 140px;
+            height: 4px;
+            background: rgba(125, 125, 125, 0.1);
+            border-radius: 4px;
+            margin-top: 15px;
+            overflow: hidden;
+            position: relative;
+            opacity: 0;
+            animation: fadeInUp 0.8s ease-out 0.4s forwards;
+        }
+
+        .loader-progress-bar {
+            position: absolute;
+            top: 0;
+            left: 0;
+            height: 100%;
+            width: 0%;
+            background: var(--primary);
+            border-radius: 4px;
+            animation: loadProgress 2s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+        }
+
+        @keyframes loadProgress {
+            0% { width: 0%; }
+            100% { width: 100%; }
+        }
+
+        @keyframes fadeInUp {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .hidden-loader {
+            opacity: 0;
+            visibility: hidden;
+            pointer-events: none;
+        }
+
         /* --- Layout --- */
         .app-container {
             display: flex;
@@ -533,6 +630,23 @@
 </head>
 <body>
 
+<!-- FANCY PRELOADER -->
+<div id="preloader">
+    <div class="loader-content">
+        <!-- SVG Infinity Icon -->
+        <svg class="infinity-svg" viewBox="0 0 100 60" xmlns="http://www.w3.org/2000/svg">
+            <!-- Smooth infinity shape path -->
+            <path class="infinity-path" d="M20,30 C20,10 40,10 50,30 C60,50 80,50 80,30 C80,10 60,10 50,30 C40,50 20,50 20,30 Z" />
+        </svg>
+        
+        <div class="loader-text">InfinityNote</div>
+        
+        <div class="loader-progress-track">
+            <div class="loader-progress-bar"></div>
+        </div>
+    </div>
+</div>
+
 <!-- Brush Preview -->
 <div id="brush-cursor"></div>
 
@@ -686,6 +800,18 @@
 <script>
     // Initialize Lucide Icons
     lucide.createIcons();
+
+    // HIDE PRELOADER ON LOAD
+    window.addEventListener('load', () => {
+        // Wait for the progress animation to likely finish (approx 2s)
+        setTimeout(() => {
+            const preloader = document.getElementById('preloader');
+            preloader.classList.add('hidden-loader');
+            setTimeout(() => {
+                preloader.style.display = 'none';
+            }, 800); // Match CSS transition time
+        }, 2100); 
+    });
 
     /**
      * Constants & Config
