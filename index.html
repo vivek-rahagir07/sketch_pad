@@ -1,0 +1,1158 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Infinity Note - Professional Digital Sketchbook</title>
+    
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    
+    <!-- Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+
+    <style>
+        :root {
+            --primary: #4361ee;
+            --primary-hover: #3a53d0;
+            --secondary: #3f37c9;
+            --bg-color: #f0f2f5;
+            --sidebar-bg: rgba(255, 255, 255, 0.85);
+            --card-bg: #ffffff;
+            --border: #e0e0e0;
+            --text-main: #2b2d42;
+            --text-muted: #8d99ae;
+            --shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+            --glass-blur: 16px;
+            --radius: 12px;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            overflow: hidden; /* Canvas handles scrolling */
+            height: 100vh;
+            width: 100vw;
+            display: flex;
+        }
+
+        /* --- Layout --- */
+        .app-container {
+            display: flex;
+            width: 100%;
+            height: 100%;
+        }
+
+        /* Sidebar */
+        aside.notebook-shelf {
+            width: 280px;
+            background: var(--sidebar-bg);
+            backdrop-filter: blur(var(--glass-blur));
+            -webkit-backdrop-filter: blur(var(--glass-blur));
+            border-right: 1px solid var(--border);
+            display: flex;
+            flex-direction: column;
+            padding: 20px;
+            z-index: 20;
+            transition: transform 0.3s ease;
+        }
+
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 30px;
+            font-family: 'Outfit', sans-serif;
+            font-weight: 700;
+            font-size: 1.25rem;
+            color: var(--primary);
+        }
+
+        .section-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 0.75rem;
+            font-weight: 600;
+            color: var(--text-muted);
+            letter-spacing: 0.05em;
+            margin-bottom: 15px;
+        }
+
+        .notebook-list {
+            list-style: none;
+            overflow-y: auto;
+            flex-grow: 1;
+            margin: 0 -10px;
+            padding: 0 10px;
+        }
+
+        .notebook-item {
+            padding: 12px 15px;
+            margin-bottom: 8px;
+            background: rgba(255,255,255,0.5);
+            border-radius: var(--radius);
+            cursor: pointer;
+            transition: all 0.2s;
+            border: 1px solid transparent;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .notebook-item:hover {
+            background: white;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+        }
+
+        .notebook-item.active {
+            background: white;
+            border-color: var(--primary);
+            color: var(--primary);
+            font-weight: 500;
+            box-shadow: 0 4px 12px rgba(67, 97, 238, 0.15);
+        }
+
+        .notebook-info {
+            display: flex;
+            flex-direction: column;
+            flex-grow: 1;
+            overflow: hidden;
+        }
+        
+        .notebook-title {
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            font-weight: 500;
+        }
+        
+        .notebook-meta {
+            font-size: 0.75rem;
+            color: var(--text-muted);
+        }
+
+        .add-btn {
+            background: var(--primary);
+            color: white;
+            border: none;
+            border-radius: 6px;
+            width: 24px;
+            height: 24px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+        
+        .add-btn:hover { background: var(--primary-hover); }
+
+        /* Main Workspace */
+        main.workspace {
+            flex-grow: 1;
+            position: relative;
+            display: flex;
+            flex-direction: column;
+            background: #eef1f5;
+        }
+
+        /* Toolbar */
+        .toolbar {
+            position: absolute;
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: var(--card-bg);
+            padding: 10px 20px;
+            border-radius: 50px;
+            box-shadow: var(--shadow);
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            z-index: 50;
+            max-width: 95%;
+            overflow-x: auto;
+        }
+
+        .tool-group {
+            display: flex;
+            gap: 8px;
+            padding-right: 15px;
+            border-right: 1px solid var(--border);
+            align-items: center;
+        }
+        
+        .tool-group:last-child {
+            border-right: none;
+            padding-right: 0;
+        }
+
+        .tool-btn {
+            width: 40px;
+            height: 40px;
+            min-width: 40px; /* Prevent shrinking */
+            border-radius: 50%;
+            border: 2px solid transparent;
+            background: transparent;
+            color: var(--text-muted);
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            position: relative;
+        }
+
+        .tool-btn:hover {
+            background: rgba(0,0,0,0.03);
+            color: var(--text-main);
+        }
+
+        .tool-btn.active {
+            background: rgba(67, 97, 238, 0.1);
+            color: var(--primary);
+            transform: translateY(-2px);
+        }
+        
+        /* Color Indicator Dot */
+        .tool-btn::after {
+            content: '';
+            position: absolute;
+            bottom: 4px;
+            width: 4px;
+            height: 4px;
+            background: currentColor;
+            border-radius: 50%;
+            opacity: 0;
+            transition: opacity 0.2s;
+        }
+        
+        .tool-btn.active::after {
+            opacity: 1;
+        }
+
+        /* Color Palette */
+        .color-palette {
+            display: flex;
+            gap: 8px;
+        }
+
+        .color-swatch {
+            width: 24px;
+            height: 24px;
+            min-width: 24px;
+            border-radius: 50%;
+            border: 2px solid white;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            cursor: pointer;
+            transition: transform 0.2s;
+            position: relative;
+        }
+
+        .color-swatch:hover { transform: scale(1.1); }
+        
+        .color-swatch.active {
+            transform: scale(1.2);
+            border-color: var(--text-main);
+        }
+
+        /* Canvas Area */
+        #canvas-wrapper {
+            flex-grow: 1;
+            position: relative;
+            overflow: auto;
+            display: flex;
+            justify-content: center; /* Center horizontally */
+            /* Remove padding here, add it to a container inside if needed, or handle via margins on canvas */
+            padding: 40px 40px 100px 40px; 
+            touch-action: none;
+            background-image: radial-gradient(#cdd1d6 1px, transparent 1px);
+            background-size: 20px 20px;
+        }
+
+        .canvas-card {
+            background: white;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.1);
+            border-radius: 2px;
+            position: relative;
+            cursor: crosshair;
+            transition: box-shadow 0.3s;
+            /* width/height controlled by JS for zoom */
+            transform-origin: top center;
+        }
+
+        /* Page Background Patterns */
+        .canvas-card[data-pattern="ruled"] {
+            background-image: linear-gradient(#e5e5e5 1px, transparent 1px);
+            background-size: 100% 30px;
+        }
+        
+        .canvas-card[data-pattern="grid"] {
+            background-image: linear-gradient(#e5e5e5 1px, transparent 1px), linear-gradient(90deg, #e5e5e5 1px, transparent 1px);
+            background-size: 25px 25px;
+        }
+        
+        .canvas-card[data-pattern="dots"] {
+            background-image: radial-gradient(#d1d1d1 1.5px, transparent 1.5px);
+            background-size: 25px 25px;
+        }
+
+        /* Floating Page Navigation Bar */
+        .page-nav-bar {
+            position: absolute;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: var(--card-bg);
+            padding: 8px 16px;
+            border-radius: 12px;
+            box-shadow: var(--shadow);
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            z-index: 40;
+            border: 1px solid var(--border);
+            flex-wrap: wrap; /* allow wrapping on small screens */
+            justify-content: center;
+        }
+
+        .nav-btn {
+            background: transparent;
+            border: none;
+            cursor: pointer;
+            color: var(--text-main);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 4px;
+            border-radius: 4px;
+        }
+        .nav-btn:hover { background: rgba(0,0,0,0.05); }
+        .nav-btn:disabled { opacity: 0.3; cursor: not-allowed; }
+
+        .page-indicator {
+            font-size: 0.9rem;
+            font-weight: 600;
+            font-variant-numeric: tabular-nums;
+            min-width: 60px;
+            text-align: center;
+        }
+
+        /* Separator */
+        .v-sep {
+            width: 1px; 
+            height: 20px; 
+            background: var(--border); 
+            margin: 0 5px;
+        }
+
+        /* Text Input Overlay */
+        .text-tool-input {
+            position: absolute;
+            background: transparent;
+            border: 1px dashed var(--primary);
+            outline: none;
+            font-family: 'Inter', sans-serif;
+            padding: 0;
+            margin: 0;
+            overflow: hidden;
+            resize: none;
+            z-index: 100;
+            line-height: 1.2;
+        }
+
+        /* Mobile Responsive */
+        @media (max-width: 768px) {
+            aside.notebook-shelf {
+                position: absolute;
+                height: 100%;
+                transform: translateX(-100%);
+                box-shadow: 5px 0 15px rgba(0,0,0,0.1);
+            }
+            
+            aside.notebook-shelf.open {
+                transform: translateX(0);
+            }
+
+            .toolbar {
+                width: 95%;
+                justify-content: flex-start;
+                bottom: auto;
+                top: 10px;
+                padding: 10px;
+                border-radius: 12px;
+                flex-wrap: nowrap;
+            }
+            
+            #canvas-wrapper {
+                padding: 100px 10px 140px 10px; /* More bottom padding for taller nav bar */
+            }
+
+            .page-nav-bar {
+                width: 95%;
+                gap: 8px;
+                padding: 8px 10px;
+                bottom: 10px;
+            }
+            
+            .v-sep { margin: 0 2px; }
+        }
+        
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: #d1d5db; border-radius: 10px; }
+        ::-webkit-scrollbar-thumb:hover { background: #9ca3af; }
+
+    </style>
+</head>
+<body>
+
+<div class="app-container">
+    <!-- Sidebar -->
+    <aside class="notebook-shelf" id="sidebar">
+        <div class="logo">
+            <i data-lucide="infinity"></i>
+            <span>InfinityNote</span>
+        </div>
+
+        <div class="section-header">
+            <label>MY NOTEBOOKS</label>
+            <button class="add-btn" id="new-notebook-btn" title="New Notebook">
+                <i data-lucide="plus" size="14"></i>
+            </button>
+        </div>
+
+        <ul class="notebook-list" id="notebook-list">
+            <!-- Notebooks injected here -->
+        </ul>
+        
+        <div style="margin-top: auto; padding-top: 20px; border-top: 1px solid var(--border);">
+             <button id="clear-all-data" style="width: 100%; padding: 10px; background: #fff0f0; color: #e63946; border: none; border-radius: 6px; cursor: pointer; font-size: 0.8rem;">Reset All Data</button>
+        </div>
+    </aside>
+
+    <!-- Main Workspace -->
+    <main class="workspace">
+        
+        <!-- Toggle Sidebar (Mobile) -->
+        <button id="menu-toggle" style="position: absolute; top: 20px; left: 20px; z-index: 60; background: white; padding: 8px; border-radius: 8px; border: 1px solid var(--border); cursor: pointer; display: none;">
+            <i data-lucide="menu"></i>
+        </button>
+
+        <!-- Toolbar -->
+        <div class="toolbar">
+            <div class="tool-group">
+                <button class="tool-btn active" id="tool-pen" title="Fountain Pen">
+                    <i data-lucide="pen-tool"></i>
+                </button>
+                <button class="tool-btn" id="tool-pencil" title="Pencil">
+                    <i data-lucide="pencil"></i>
+                </button>
+                <button class="tool-btn" id="tool-highlighter" title="Highlighter">
+                    <i data-lucide="highlighter"></i>
+                </button>
+                <button class="tool-btn" id="tool-eraser" title="Eraser">
+                    <i data-lucide="eraser"></i>
+                </button>
+                <button class="tool-btn" id="tool-text" title="Text">
+                    <i data-lucide="type"></i>
+                </button>
+            </div>
+            
+            <div class="tool-group">
+                 <button class="tool-btn" id="tool-rect" title="Rectangle">
+                    <i data-lucide="square"></i>
+                </button>
+                 <button class="tool-btn" id="tool-circle" title="Circle">
+                    <i data-lucide="circle"></i>
+                </button>
+                 <button class="tool-btn" id="tool-line" title="Line">
+                    <i data-lucide="minus"></i>
+                </button>
+            </div>
+
+            <div class="tool-group color-palette" id="color-palette">
+                <!-- Colors injected via JS based on tool -->
+            </div>
+
+            <div class="tool-group">
+                <button class="tool-btn" id="action-undo" title="Undo">
+                    <i data-lucide="undo-2"></i>
+                </button>
+                <button class="tool-btn" id="action-download" title="Save Image">
+                    <i data-lucide="download"></i>
+                </button>
+            </div>
+        </div>
+
+        <!-- Canvas Area -->
+        <div id="canvas-wrapper">
+            <canvas id="drawing-canvas" class="canvas-card" data-pattern="ruled"></canvas>
+        </div>
+        
+        <!-- Page Navigation & Zoom Bar -->
+        <div class="page-nav-bar">
+             <!-- Navigation -->
+             <button class="nav-btn" id="prev-page" title="Previous Page">
+                <i data-lucide="chevron-left"></i>
+             </button>
+             <span class="page-indicator" id="page-indicator">1 / 1</span>
+             <button class="nav-btn" id="next-page" title="Next Page">
+                <i data-lucide="chevron-right"></i>
+             </button>
+             <button class="nav-btn" id="add-page" title="Add Page" style="color: var(--primary);">
+                <i data-lucide="plus-square"></i>
+             </button>
+             
+             <div class="v-sep"></div>
+
+             <!-- Zoom Controls -->
+             <button class="nav-btn" id="zoom-out" title="Zoom Out">
+                <i data-lucide="minus-circle"></i>
+             </button>
+             <span class="page-indicator" id="zoom-level" style="min-width: 40px; font-size: 0.8rem;">100%</span>
+             <button class="nav-btn" id="zoom-in" title="Zoom In">
+                <i data-lucide="plus-circle"></i>
+             </button>
+             <button class="nav-btn" id="zoom-fit" title="Fit to Screen">
+                <i data-lucide="maximize"></i>
+             </button>
+
+             <div class="v-sep"></div>
+
+             <select id="pattern-select" style="padding: 5px; border-radius: 5px; border: 1px solid var(--border); font-size: 0.8rem;">
+                <option value="none">Blank</option>
+                <option value="ruled" selected>Ruled</option>
+                <option value="grid">Grid</option>
+                <option value="dots">Dots</option>
+            </select>
+        </div>
+
+    </main>
+</div>
+
+<script>
+    // Initialize Lucide Icons
+    lucide.createIcons();
+
+    /**
+     * Constants & Config
+     */
+    const CONFIG = {
+        canvasWidth: 800,
+        canvasHeight: 1100, // A4ish ratio
+        colors: {
+            pen: ['#1a1a1a', '#1e3a8a', '#991b1b', '#064e3b', '#6d28d9'], // Black, Navy, Red, Deep Green, Purple
+            pencil: ['#4b5563', '#1e40af', '#dc2626', '#166534', '#7c3aed'], 
+            highlighter: ['#fef08a', '#bbf7d0', '#fbcfe8', '#bae6fd', '#ddd6fe'],
+            shapes: ['#1a1a1a', '#e11d48', '#2563eb', '#16a34a', '#d97706'],
+            text: ['#1a1a1a', '#dc2626', '#2563eb', '#059669']
+        }
+    };
+
+    /**
+     * Application State
+     */
+    const state = {
+        currentTool: 'pen',
+        currentColor: CONFIG.colors.pen[0], 
+        brushSize: 2,
+        isDrawing: false,
+        startX: 0,
+        startY: 0,
+        snapshot: null, // For shape previews
+        notebooks: [],
+        activeNotebookId: null,
+        activePageId: null,
+        history: [], // For Undo
+        historyStep: -1,
+        scale: 1.0 // Zoom scale
+    };
+
+    /**
+     * DOM Elements
+     */
+    const canvas = document.getElementById('drawing-canvas');
+    const ctx = canvas.getContext('2d', { willReadFrequently: true });
+    const paletteContainer = document.getElementById('color-palette');
+    const notebookListEl = document.getElementById('notebook-list');
+    const pageIndicator = document.getElementById('page-indicator');
+    const patternSelect = document.getElementById('pattern-select');
+    const zoomDisplay = document.getElementById('zoom-level');
+    const canvasWrapper = document.getElementById('canvas-wrapper');
+
+    /**
+     * Initialization
+     */
+    function init() {
+        canvas.width = CONFIG.canvasWidth;
+        canvas.height = CONFIG.canvasHeight;
+        
+        loadData();
+        setupToolbar();
+        renderNotebookList();
+        setupCanvasEvents();
+        
+        // Initial Tool
+        setTool('pen');
+        
+        // Initial Zoom check (Fit to screen on mobile)
+        if (window.innerWidth < 800) {
+            fitToScreen();
+        } else {
+            setZoom(1.0);
+        }
+
+        if (window.innerWidth <= 768) {
+            document.getElementById('menu-toggle').style.display = 'block';
+        }
+    }
+
+    /**
+     * Drawing Engine
+     */
+    function setupCanvasEvents() {
+        const startDraw = (e) => {
+            if (e.target.tagName === 'TEXTAREA') return; 
+            e.preventDefault();
+            
+            if (state.currentTool === 'text') {
+                const pos = getPos(e);
+                createTextInput(pos.x, pos.y);
+                return;
+            }
+
+            state.isDrawing = true;
+            saveStateToHistory(); 
+            
+            const pos = getPos(e);
+            state.startX = pos.x;
+            state.startY = pos.y;
+            
+            ctx.beginPath();
+            ctx.moveTo(pos.x, pos.y);
+            
+            setupBrushStyle();
+            
+            state.points = [pos];
+            
+            if (['rect', 'circle', 'line'].includes(state.currentTool)) {
+                state.snapshot = ctx.getImageData(0, 0, canvas.width, canvas.height);
+            }
+        };
+
+        const moveDraw = (e) => {
+            if (!state.isDrawing) return;
+            e.preventDefault();
+            
+            const pos = getPos(e);
+
+            if (['rect', 'circle', 'line'].includes(state.currentTool)) {
+                ctx.putImageData(state.snapshot, 0, 0);
+                drawShapePreview(pos);
+            } else {
+                state.points.push(pos);
+                if (state.points.length > 2) {
+                    const p1 = state.points[state.points.length - 3];
+                    const p2 = state.points[state.points.length - 2];
+                    const midPoint = {
+                        x: (p1.x + p2.x) / 2,
+                        y: (p1.y + p2.y) / 2
+                    };
+                    
+                    if(state.currentTool === 'eraser') {
+                        ctx.lineTo(pos.x, pos.y);
+                        ctx.stroke();
+                    } else {
+                        ctx.quadraticCurveTo(p1.x, p1.y, midPoint.x, midPoint.y);
+                        ctx.stroke();
+                        ctx.beginPath();
+                        ctx.moveTo(midPoint.x, midPoint.y);
+                    }
+                }
+            }
+        };
+
+        const endDraw = (e) => {
+            if (!state.isDrawing) return;
+            state.isDrawing = false;
+            
+            if (['rect', 'circle', 'line'].includes(state.currentTool)) {
+                const pos = getPos(e);
+                ctx.putImageData(state.snapshot, 0, 0);
+                setupBrushStyle(); 
+                drawShapePreview(pos);
+            } else {
+                ctx.closePath();
+            }
+            
+            saveToCurrentPage();
+        };
+
+        canvas.addEventListener('mousedown', startDraw);
+        canvas.addEventListener('mousemove', moveDraw);
+        canvas.addEventListener('mouseup', endDraw);
+        canvas.addEventListener('mouseout', endDraw);
+
+        canvas.addEventListener('touchstart', startDraw, { passive: false });
+        canvas.addEventListener('touchmove', moveDraw, { passive: false });
+        canvas.addEventListener('touchend', endDraw);
+    }
+
+    // UPDATED: Get position logic that respects CSS sizing/zoom
+    function getPos(e) {
+        const rect = canvas.getBoundingClientRect();
+        const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+        const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+        
+        // This automatically handles the zoom because rect.width changes
+        // but canvas.width stays the same.
+        const scaleX = canvas.width / rect.width;
+        const scaleY = canvas.height / rect.height;
+
+        return {
+            x: (clientX - rect.left) * scaleX,
+            y: (clientY - rect.top) * scaleY
+        };
+    }
+
+    function setupBrushStyle() {
+        ctx.lineCap = 'round';
+        ctx.lineJoin = 'round';
+        ctx.globalCompositeOperation = 'source-over';
+        
+        switch (state.currentTool) {
+            case 'pen':
+                ctx.strokeStyle = state.currentColor;
+                ctx.lineWidth = 2;
+                ctx.globalAlpha = 1;
+                break;
+            case 'pencil':
+                ctx.strokeStyle = state.currentColor;
+                ctx.lineWidth = 1;
+                ctx.globalAlpha = 0.8;
+                break;
+            case 'highlighter':
+                ctx.globalCompositeOperation = 'multiply'; 
+                ctx.strokeStyle = state.currentColor;
+                ctx.lineWidth = 20;
+                ctx.globalAlpha = 0.5;
+                ctx.lineCap = 'square';
+                break;
+            case 'eraser':
+                ctx.globalCompositeOperation = 'destination-out';
+                ctx.lineWidth = 30;
+                ctx.globalAlpha = 1;
+                break;
+            case 'rect':
+            case 'circle':
+            case 'line':
+                ctx.strokeStyle = state.currentColor;
+                ctx.lineWidth = 2;
+                ctx.globalAlpha = 1;
+                break;
+        }
+    }
+
+    function drawShapePreview(currentPos) {
+        ctx.beginPath();
+        const w = currentPos.x - state.startX;
+        const h = currentPos.y - state.startY;
+
+        if (state.currentTool === 'rect') {
+            ctx.rect(state.startX, state.startY, w, h);
+        } else if (state.currentTool === 'circle') {
+            const radius = Math.sqrt(w*w + h*h);
+            ctx.arc(state.startX, state.startY, radius, 0, 2 * Math.PI);
+        } else if (state.currentTool === 'line') {
+            ctx.moveTo(state.startX, state.startY);
+            ctx.lineTo(currentPos.x, currentPos.y);
+        }
+        ctx.stroke();
+    }
+
+    /**
+     * Text Tool
+     */
+    function createTextInput(x, y) {
+        const input = document.createElement('textarea');
+        input.className = 'text-tool-input';
+        
+        const rect = canvas.getBoundingClientRect();
+        const scaleX = rect.width / canvas.width;
+        
+        input.style.left = (rect.left + x * scaleX) + 'px';
+        input.style.top = (rect.top + y * scaleX) + 'px'; 
+        input.style.color = state.currentColor;
+        
+        // Scale font size visually to match zoom
+        const fontSize = 20 * state.scale; 
+        input.style.fontSize = `${fontSize}px`;
+        
+        document.body.appendChild(input);
+        input.focus();
+        
+        const saveText = () => {
+            if (input.value.trim()) {
+                saveStateToHistory();
+                ctx.font = '20px Inter, sans-serif'; // Draw at true canvas scale
+                ctx.fillStyle = state.currentColor;
+                ctx.globalCompositeOperation = 'source-over';
+                ctx.globalAlpha = 1;
+                
+                const lines = input.value.split('\n');
+                lines.forEach((line, i) => {
+                    ctx.fillText(line, x, y + 20 + (i * 24));
+                });
+                saveToCurrentPage();
+            }
+            if(document.body.contains(input)) document.body.removeChild(input);
+        };
+
+        input.addEventListener('blur', saveText);
+        input.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter' && !e.shiftKey) {
+                e.preventDefault();
+                input.blur();
+            }
+        });
+    }
+
+    /**
+     * UI Logic
+     */
+    function setupToolbar() {
+        const tools = ['pen', 'pencil', 'highlighter', 'eraser', 'text', 'rect', 'circle', 'line'];
+        tools.forEach(tool => {
+            document.getElementById(`tool-${tool}`).addEventListener('click', () => setTool(tool));
+        });
+
+        document.getElementById('action-undo').addEventListener('click', undo);
+        document.getElementById('action-download').addEventListener('click', downloadCanvas);
+        
+        patternSelect.addEventListener('change', (e) => {
+            canvas.setAttribute('data-pattern', e.target.value);
+            const nb = getCurrentNotebook();
+            if(nb) {
+                const page = nb.pages.find(p => p.id === state.activePageId);
+                if(page) {
+                    page.pattern = e.target.value;
+                    saveData();
+                }
+            }
+        });
+
+        // Page Nav
+        document.getElementById('prev-page').addEventListener('click', () => changePage(-1));
+        document.getElementById('next-page').addEventListener('click', () => changePage(1));
+        document.getElementById('add-page').addEventListener('click', addNewPage);
+
+        // Zoom Controls
+        document.getElementById('zoom-in').addEventListener('click', () => updateZoom(0.1));
+        document.getElementById('zoom-out').addEventListener('click', () => updateZoom(-0.1));
+        document.getElementById('zoom-fit').addEventListener('click', fitToScreen);
+    }
+
+    function setTool(toolName) {
+        state.currentTool = toolName;
+        document.querySelectorAll('.tool-btn').forEach(b => b.classList.remove('active'));
+        document.getElementById(`tool-${toolName}`).classList.add('active');
+        updatePalette();
+    }
+
+    function updatePalette() {
+        paletteContainer.innerHTML = '';
+        if (state.currentTool === 'eraser') return;
+
+        let toolType = state.currentTool;
+        if(['rect', 'circle', 'line'].includes(toolType)) toolType = 'shapes';
+
+        const colors = CONFIG.colors[toolType] || CONFIG.colors.pen;
+        if (!colors.includes(state.currentColor)) state.currentColor = colors[0];
+
+        colors.forEach(color => {
+            const swatch = document.createElement('div');
+            swatch.className = `color-swatch ${state.currentColor === color ? 'active' : ''}`;
+            swatch.style.backgroundColor = color;
+            swatch.onclick = () => {
+                state.currentColor = color;
+                updatePalette();
+                const activeBtn = document.querySelector('.tool-btn.active');
+                if(activeBtn) activeBtn.style.color = color;
+            };
+            paletteContainer.appendChild(swatch);
+        });
+    }
+
+    /**
+     * Zoom Logic
+     */
+    function updateZoom(delta) {
+        let newScale = state.scale + delta;
+        // Clamp scale between 0.1 (10%) and 3.0 (300%)
+        newScale = Math.min(Math.max(newScale, 0.1), 3.0);
+        setZoom(newScale);
+    }
+
+    function setZoom(scaleLevel) {
+        state.scale = scaleLevel;
+        
+        // We use style.width/height instead of transform to allow browser scrollbars to work naturally
+        canvas.style.width = `${CONFIG.canvasWidth * state.scale}px`;
+        canvas.style.height = `${CONFIG.canvasHeight * state.scale}px`;
+        
+        zoomDisplay.innerText = `${Math.round(state.scale * 100)}%`;
+    }
+
+    function fitToScreen() {
+        // Calculate padding (40px on sides inside wrapper)
+        const availableWidth = canvasWrapper.clientWidth - 80; 
+        const availableHeight = canvasWrapper.clientHeight - 80;
+        
+        const scaleW = availableWidth / CONFIG.canvasWidth;
+        const scaleH = availableHeight / CONFIG.canvasHeight;
+        
+        // Fit completely visible (min) or just fit width?
+        // Usually fit width is better for writing, fit entire page better for reviewing.
+        // Let's go with Fit Height to ensure whole page visible, maxing out at Fit Width
+        let fitScale = Math.min(scaleW, scaleH);
+        
+        // Don't let it zoom in too crazy if screen is huge, cap at 1.0 or slightly more
+        // Actually for small screens we want it small.
+        
+        setZoom(fitScale);
+    }
+
+    /**
+     * Notebook & Page Logic
+     */
+    function getCurrentNotebook() {
+        return state.notebooks.find(n => n.id === state.activeNotebookId);
+    }
+
+    function renderNotebookList() {
+        notebookListEl.innerHTML = '';
+        state.notebooks.forEach(nb => {
+            const li = document.createElement('li');
+            li.className = `notebook-item ${nb.id === state.activeNotebookId ? 'active' : ''}`;
+            
+            const pageCount = nb.pages ? nb.pages.length : 1;
+            
+            li.innerHTML = `
+                <i data-lucide="book" size="18"></i>
+                <div class="notebook-info">
+                    <div class="notebook-title">${nb.title}</div>
+                    <div class="notebook-meta">${pageCount} Page${pageCount > 1 ? 's' : ''}</div>
+                </div>
+                <i data-lucide="chevron-right" size="14" style="opacity:0.5"></i>
+            `;
+            li.onclick = () => switchNotebook(nb.id);
+            notebookListEl.appendChild(li);
+        });
+        lucide.createIcons();
+    }
+
+    function createNotebook() {
+        const title = prompt("Notebook Name:", `Notebook ${state.notebooks.length + 1}`);
+        if (!title) return;
+
+        const newNb = {
+            id: 'nb_' + Date.now(),
+            title: title,
+            pages: [{ id: 'pg_' + Date.now(), imageData: null, pattern: 'ruled' }]
+        };
+        
+        state.notebooks.push(newNb);
+        saveData();
+        switchNotebook(newNb.id);
+    }
+
+    function switchNotebook(id) {
+        if (state.activeNotebookId) saveToCurrentPage();
+        state.activeNotebookId = id;
+        
+        const nb = getCurrentNotebook();
+        // Load first page
+        loadPage(nb.pages[0].id);
+        renderNotebookList();
+        
+        if(window.innerWidth <= 768) document.getElementById('sidebar').classList.remove('open');
+    }
+
+    function addNewPage() {
+        const nb = getCurrentNotebook();
+        if(!nb) return;
+        
+        saveToCurrentPage();
+        
+        const newPage = {
+            id: 'pg_' + Date.now(),
+            imageData: null,
+            pattern: 'ruled'
+        };
+        
+        nb.pages.push(newPage);
+        saveData();
+        loadPage(newPage.id);
+        renderNotebookList(); 
+    }
+
+    function changePage(delta) {
+        const nb = getCurrentNotebook();
+        if(!nb) return;
+        
+        const currentIndex = nb.pages.findIndex(p => p.id === state.activePageId);
+        const newIndex = currentIndex + delta;
+        
+        if (newIndex >= 0 && newIndex < nb.pages.length) {
+            saveToCurrentPage();
+            loadPage(nb.pages[newIndex].id);
+        }
+    }
+
+    function loadPage(pageId) {
+        const nb = getCurrentNotebook();
+        const page = nb.pages.find(p => p.id === pageId);
+        const index = nb.pages.findIndex(p => p.id === pageId);
+        
+        state.activePageId = pageId;
+        
+        // Reset Canvas
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        state.history = [];
+        state.historyStep = -1;
+
+        // Load Pattern
+        canvas.setAttribute('data-pattern', page.pattern || 'ruled');
+        patternSelect.value = page.pattern || 'ruled';
+
+        // Load Image
+        if (page.imageData) {
+            const img = new Image();
+            img.onload = () => ctx.drawImage(img, 0, 0);
+            img.src = page.imageData;
+        }
+
+        // Update UI Controls
+        pageIndicator.innerText = `${index + 1} / ${nb.pages.length}`;
+        document.getElementById('prev-page').disabled = index === 0;
+        document.getElementById('next-page').disabled = index === nb.pages.length - 1;
+    }
+
+    function saveToCurrentPage() {
+        const nb = getCurrentNotebook();
+        if(!nb) return;
+        const page = nb.pages.find(p => p.id === state.activePageId);
+        if (page) {
+            page.imageData = canvas.toDataURL();
+            saveData();
+        }
+    }
+
+    /* --- History & Data --- */
+    function saveStateToHistory() {
+        state.historyStep++;
+        if (state.historyStep < state.history.length) state.history.length = state.historyStep;
+        state.history.push(canvas.toDataURL());
+        if (state.history.length > 10) { state.history.shift(); state.historyStep--; }
+    }
+
+    function undo() {
+        if (state.historyStep >= 0) {
+            const prevUrl = state.history[state.historyStep];
+            state.historyStep--;
+            const img = new Image();
+            img.src = prevUrl;
+            img.onload = () => {
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+                ctx.drawImage(img, 0, 0);
+            };
+        } else {
+             ctx.clearRect(0, 0, canvas.width, canvas.height);
+        }
+    }
+
+    function saveData() {
+        localStorage.setItem('infinityNoteDataV2', JSON.stringify({
+            notebooks: state.notebooks,
+            activeNbId: state.activeNotebookId
+        }));
+    }
+
+    function loadData() {
+        const data = localStorage.getItem('infinityNoteDataV2');
+        if (data) {
+            const parsed = JSON.parse(data);
+            state.notebooks = parsed.notebooks;
+            if (state.notebooks.length > 0) {
+                 const idToLoad = parsed.activeNbId || state.notebooks[0].id;
+                 state.activeNotebookId = idToLoad;
+                 setTimeout(() => switchNotebook(idToLoad), 10);
+            } else {
+                createDefaultNotebook();
+            }
+        } else {
+            createDefaultNotebook();
+        }
+    }
+
+    function createDefaultNotebook() {
+        const defaultNb = {
+            id: 'nb_default',
+            title: 'My First Notebook',
+            pages: [{ id: 'pg_default', imageData: null, pattern: 'ruled' }]
+        };
+        state.notebooks = [defaultNb];
+        state.activeNotebookId = defaultNb.id;
+        state.activePageId = defaultNb.pages[0].id;
+        renderNotebookList();
+        loadPage(defaultNb.pages[0].id);
+    }
+
+    function downloadCanvas() {
+        const link = document.createElement('a');
+        link.download = `page_${state.activePageId}.png`;
+        const tempCanvas = document.createElement('canvas');
+        tempCanvas.width = canvas.width;
+        tempCanvas.height = canvas.height;
+        const tempCtx = tempCanvas.getContext('2d');
+        tempCtx.fillStyle = '#ffffff';
+        tempCtx.fillRect(0,0, tempCanvas.width, tempCanvas.height);
+        tempCtx.drawImage(canvas, 0, 0);
+        link.href = tempCanvas.toDataURL();
+        link.click();
+    }
+
+    /* --- Event Listeners --- */
+    document.getElementById('new-notebook-btn').addEventListener('click', createNotebook);
+    document.getElementById('menu-toggle').addEventListener('click', () => {
+        document.getElementById('sidebar').classList.toggle('open');
+    });
+    document.getElementById('clear-all-data').addEventListener('click', () => {
+        if(confirm("Delete all notebooks?")) {
+            localStorage.removeItem('infinityNoteDataV2');
+            location.reload();
+        }
+    });
+
+    // Start
+    init();
+
+</script>
+</body>
+</html>
