@@ -27,6 +27,27 @@
             --shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
             --glass-blur: 16px;
             --radius: 12px;
+            --toast-bg: rgba(43, 45, 66, 0.9);
+            --canvas-shadow: 0 10px 40px rgba(0,0,0,0.1);
+        }
+
+        /* Dark Mode Variables */
+        body.dark-mode {
+            --primary: #5b7fff;
+            --primary-hover: #7b99ff;
+            --bg-color: #121212;
+            --sidebar-bg: rgba(30, 30, 30, 0.85);
+            --card-bg: #1e1e1e;
+            --border: #333333;
+            --text-main: #e0e0e0;
+            --text-muted: #a0a0a0;
+            --shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
+            --toast-bg: rgba(255, 255, 255, 0.9);
+            --canvas-shadow: 0 10px 40px rgba(0,0,0,0.5);
+        }
+        
+        body.dark-mode .toast {
+            color: #1a1a1a;
         }
 
         * {
@@ -44,6 +65,7 @@
             height: 100vh;
             width: 100vw;
             display: flex;
+            transition: background-color 0.3s, color 0.3s;
         }
 
         /* --- Layout --- */
@@ -64,7 +86,7 @@
             flex-direction: column;
             padding: 20px;
             z-index: 20;
-            transition: transform 0.3s ease;
+            transition: transform 0.3s ease, background 0.3s, border 0.3s;
         }
 
         .logo {
@@ -100,7 +122,7 @@
         .notebook-item {
             padding: 12px 15px;
             margin-bottom: 8px;
-            background: rgba(255,255,255,0.5);
+            background: rgba(125, 125, 125, 0.1);
             border-radius: var(--radius);
             cursor: pointer;
             transition: all 0.2s;
@@ -111,16 +133,20 @@
         }
 
         .notebook-item:hover {
-            background: white;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+            background: rgba(125, 125, 125, 0.2);
         }
 
         .notebook-item.active {
-            background: white;
+            background: var(--card-bg);
             border-color: var(--primary);
             color: var(--primary);
             font-weight: 500;
-            box-shadow: 0 4px 12px rgba(67, 97, 238, 0.15);
+            box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+        }
+        
+        body.dark-mode .notebook-item.active {
+            background: #2d2d2d;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.2);
         }
 
         .notebook-info {
@@ -142,21 +168,22 @@
             color: var(--text-muted);
         }
 
-        .add-btn {
-            background: var(--primary);
-            color: white;
-            border: none;
+        .icon-btn {
+            background: transparent;
+            color: var(--text-main);
+            border: 1px solid var(--border);
             border-radius: 6px;
-            width: 24px;
-            height: 24px;
+            width: 28px;
+            height: 28px;
             display: flex;
             align-items: center;
             justify-content: center;
             cursor: pointer;
-            transition: background 0.2s;
+            transition: all 0.2s;
         }
-        
-        .add-btn:hover { background: var(--primary-hover); }
+        .icon-btn:hover { background: var(--primary); color: white; border-color: var(--primary); }
+        .icon-btn.primary { background: var(--primary); color: white; border: none; }
+        .icon-btn.primary:hover { background: var(--primary-hover); }
 
         /* Main Workspace */
         main.workspace {
@@ -164,7 +191,8 @@
             position: relative;
             display: flex;
             flex-direction: column;
-            background: #eef1f5;
+            background: var(--bg-color); /* Matches body */
+            transition: background 0.3s;
         }
 
         /* Toolbar */
@@ -183,6 +211,8 @@
             z-index: 50;
             max-width: 95%;
             overflow-x: auto;
+            border: 1px solid var(--border);
+            transition: background 0.3s, border 0.3s;
         }
 
         .tool-group {
@@ -215,12 +245,12 @@
         }
 
         .tool-btn:hover {
-            background: rgba(0,0,0,0.03);
+            background: rgba(125,125,125,0.1);
             color: var(--text-main);
         }
 
         .tool-btn.active {
-            background: rgba(67, 97, 238, 0.1);
+            background: rgba(67, 97, 238, 0.15);
             color: var(--primary);
             transform: translateY(-2px);
         }
@@ -240,6 +270,28 @@
         
         .tool-btn.active::after {
             opacity: 1;
+        }
+
+        /* Brush Size Slider */
+        input[type=range] {
+            -webkit-appearance: none;
+            width: 80px;
+            height: 4px;
+            background: var(--border);
+            border-radius: 2px;
+            outline: none;
+        }
+        input[type=range]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 14px;
+            height: 14px;
+            border-radius: 50%;
+            background: var(--primary);
+            cursor: pointer;
+            transition: transform 0.1s;
+        }
+        input[type=range]::-webkit-slider-thumb:hover {
+            transform: scale(1.2);
         }
 
         /* Color Palette */
@@ -274,21 +326,34 @@
             overflow: auto;
             display: flex;
             justify-content: center; /* Center horizontally */
-            /* Remove padding here, add it to a container inside if needed, or handle via margins on canvas */
             padding: 40px 40px 100px 40px; 
             touch-action: none;
-            background-image: radial-gradient(#cdd1d6 1px, transparent 1px);
+            /* Dotted background for workspace */
+            background-image: radial-gradient(var(--border) 1px, transparent 1px);
             background-size: 20px 20px;
+            cursor: none; /* Hide default cursor */
+        }
+
+        /* Brush Preview Cursor */
+        #brush-cursor {
+            position: fixed;
+            border: 1px solid var(--text-main);
+            border-radius: 50%;
+            pointer-events: none;
+            z-index: 9999;
+            transform: translate(-50%, -50%);
+            display: none;
+            background: rgba(255, 255, 255, 0.2);
+            backdrop-filter: invert(0.2);
         }
 
         .canvas-card {
-            background: white;
-            box-shadow: 0 10px 40px rgba(0,0,0,0.1);
+            background: white; /* Paper is always white/off-white for now */
+            box-shadow: var(--canvas-shadow);
             border-radius: 2px;
             position: relative;
-            cursor: crosshair;
+            /* No cursor here, handled by #brush-cursor */
             transition: box-shadow 0.3s;
-            /* width/height controlled by JS for zoom */
             transform-origin: top center;
         }
 
@@ -323,8 +388,9 @@
             gap: 15px;
             z-index: 40;
             border: 1px solid var(--border);
-            flex-wrap: wrap; /* allow wrapping on small screens */
+            flex-wrap: wrap; 
             justify-content: center;
+            transition: background 0.3s;
         }
 
         .nav-btn {
@@ -338,7 +404,7 @@
             padding: 4px;
             border-radius: 4px;
         }
-        .nav-btn:hover { background: rgba(0,0,0,0.05); }
+        .nav-btn:hover { background: rgba(125,125,125,0.1); }
         .nav-btn:disabled { opacity: 0.3; cursor: not-allowed; }
 
         .page-indicator {
@@ -357,6 +423,38 @@
             margin: 0 5px;
         }
 
+        /* Toast Notifications */
+        .toast-container {
+            position: fixed;
+            bottom: 90px;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 100;
+            pointer-events: none;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .toast {
+            background: var(--toast-bg);
+            color: white;
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-size: 0.85rem;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+            animation: fadeInOut 2s ease forwards;
+            backdrop-filter: blur(4px);
+            font-weight: 500;
+        }
+
+        @keyframes fadeInOut {
+            0% { opacity: 0; transform: translateY(10px); }
+            10% { opacity: 1; transform: translateY(0); }
+            80% { opacity: 1; transform: translateY(0); }
+            100% { opacity: 0; transform: translateY(-10px); }
+        }
+
         /* Text Input Overlay */
         .text-tool-input {
             position: absolute;
@@ -370,6 +468,17 @@
             resize: none;
             z-index: 100;
             line-height: 1.2;
+        }
+        
+        select {
+            background: var(--card-bg);
+            color: var(--text-main);
+            border: 1px solid var(--border);
+            padding: 5px;
+            border-radius: 5px;
+            font-size: 0.8rem;
+            margin-left: 5px;
+            outline: none;
         }
 
         /* Mobile Responsive */
@@ -396,7 +505,7 @@
             }
             
             #canvas-wrapper {
-                padding: 100px 10px 140px 10px; /* More bottom padding for taller nav bar */
+                padding: 100px 10px 140px 10px; 
             }
 
             .page-nav-bar {
@@ -407,6 +516,8 @@
             }
             
             .v-sep { margin: 0 2px; }
+            
+            #brush-cursor { display: none !important; } /* No cursor on touch */
         }
         
         /* Custom Scrollbar */
@@ -422,6 +533,9 @@
 </head>
 <body>
 
+<!-- Brush Preview -->
+<div id="brush-cursor"></div>
+
 <div class="app-container">
     <!-- Sidebar -->
     <aside class="notebook-shelf" id="sidebar">
@@ -432,7 +546,7 @@
 
         <div class="section-header">
             <label>MY NOTEBOOKS</label>
-            <button class="add-btn" id="new-notebook-btn" title="New Notebook">
+            <button class="icon-btn primary" id="new-notebook-btn" title="New Notebook">
                 <i data-lucide="plus" size="14"></i>
             </button>
         </div>
@@ -441,8 +555,16 @@
             <!-- Notebooks injected here -->
         </ul>
         
-        <div style="margin-top: auto; padding-top: 20px; border-top: 1px solid var(--border);">
-             <button id="clear-all-data" style="width: 100%; padding: 10px; background: #fff0f0; color: #e63946; border: none; border-radius: 6px; cursor: pointer; font-size: 0.8rem;">Reset All Data</button>
+        <div style="margin-top: auto; padding-top: 20px; border-top: 1px solid var(--border); display: flex; flex-direction: column; gap: 10px;">
+             <!-- Dark Mode Toggle -->
+             <button id="theme-toggle" class="icon-btn" style="width: 100%; justify-content: flex-start; gap: 10px; border: none;">
+                <i data-lucide="moon"></i>
+                <span>Dark Mode</span>
+             </button>
+             
+             <button id="clear-all-data" style="width: 100%; padding: 10px; background: rgba(239, 68, 68, 0.1); color: #ef4444; border: none; border-radius: 6px; cursor: pointer; font-size: 0.8rem; display: flex; align-items: center; justify-content: center; gap: 8px;">
+                <i data-lucide="trash" size="14"></i> Reset App
+             </button>
         </div>
     </aside>
 
@@ -450,38 +572,45 @@
     <main class="workspace">
         
         <!-- Toggle Sidebar (Mobile) -->
-        <button id="menu-toggle" style="position: absolute; top: 20px; left: 20px; z-index: 60; background: white; padding: 8px; border-radius: 8px; border: 1px solid var(--border); cursor: pointer; display: none;">
+        <button id="menu-toggle" class="icon-btn" style="position: absolute; top: 20px; left: 20px; z-index: 60; background: var(--card-bg); display: none;">
             <i data-lucide="menu"></i>
         </button>
 
         <!-- Toolbar -->
         <div class="toolbar">
             <div class="tool-group">
-                <button class="tool-btn active" id="tool-pen" title="Fountain Pen">
+                <button class="tool-btn active" id="tool-pen" title="Fountain Pen (P)">
                     <i data-lucide="pen-tool"></i>
                 </button>
-                <button class="tool-btn" id="tool-pencil" title="Pencil">
+                <button class="tool-btn" id="tool-pencil" title="Pencil (B)">
                     <i data-lucide="pencil"></i>
                 </button>
-                <button class="tool-btn" id="tool-highlighter" title="Highlighter">
+                <button class="tool-btn" id="tool-highlighter" title="Highlighter (H)">
                     <i data-lucide="highlighter"></i>
                 </button>
-                <button class="tool-btn" id="tool-eraser" title="Eraser">
+                <button class="tool-btn" id="tool-eraser" title="Eraser (E)">
                     <i data-lucide="eraser"></i>
                 </button>
-                <button class="tool-btn" id="tool-text" title="Text">
+                <button class="tool-btn" id="tool-text" title="Text (T)">
                     <i data-lucide="type"></i>
                 </button>
             </div>
+
+            <!-- Brush Size Slider -->
+            <div class="tool-group" style="display: flex; align-items: center; gap: 6px; padding: 0 10px;">
+                <i data-lucide="circle" size="10" style="color: var(--text-muted)"></i>
+                <input type="range" id="brush-size" min="1" max="40" value="3" title="Brush Size ([ / ])">
+                <i data-lucide="circle" size="16" style="color: var(--text-muted)"></i>
+            </div>
             
             <div class="tool-group">
-                 <button class="tool-btn" id="tool-rect" title="Rectangle">
+                 <button class="tool-btn" id="tool-rect" title="Rectangle (S)">
                     <i data-lucide="square"></i>
                 </button>
-                 <button class="tool-btn" id="tool-circle" title="Circle">
+                 <button class="tool-btn" id="tool-circle" title="Circle (C)">
                     <i data-lucide="circle"></i>
                 </button>
-                 <button class="tool-btn" id="tool-line" title="Line">
+                 <button class="tool-btn" id="tool-line" title="Line (L)">
                     <i data-lucide="minus"></i>
                 </button>
             </div>
@@ -491,7 +620,7 @@
             </div>
 
             <div class="tool-group">
-                <button class="tool-btn" id="action-undo" title="Undo">
+                <button class="tool-btn" id="action-undo" title="Undo (Ctrl+Z)">
                     <i data-lucide="undo-2"></i>
                 </button>
                 <button class="tool-btn" id="action-download" title="Save Image">
@@ -535,13 +664,21 @@
 
              <div class="v-sep"></div>
 
-             <select id="pattern-select" style="padding: 5px; border-radius: 5px; border: 1px solid var(--border); font-size: 0.8rem;">
+             <!-- Utilities -->
+             <button class="nav-btn" id="clear-page" title="Clear Page" style="color: #ef4444;">
+                <i data-lucide="trash-2"></i>
+             </button>
+
+             <select id="pattern-select" style="margin-left: 5px;">
                 <option value="none">Blank</option>
                 <option value="ruled" selected>Ruled</option>
                 <option value="grid">Grid</option>
                 <option value="dots">Dots</option>
             </select>
         </div>
+
+        <!-- Toast Container -->
+        <div class="toast-container" id="toast-container"></div>
 
     </main>
 </div>
@@ -571,7 +708,6 @@
     const state = {
         currentTool: 'pen',
         currentColor: CONFIG.colors.pen[0], 
-        brushSize: 2,
         isDrawing: false,
         startX: 0,
         startY: 0,
@@ -581,7 +717,8 @@
         activePageId: null,
         history: [], // For Undo
         historyStep: -1,
-        scale: 1.0 // Zoom scale
+        scale: 1.0, // Zoom scale
+        isDarkMode: false
     };
 
     /**
@@ -595,6 +732,9 @@
     const patternSelect = document.getElementById('pattern-select');
     const zoomDisplay = document.getElementById('zoom-level');
     const canvasWrapper = document.getElementById('canvas-wrapper');
+    const brushSizeInput = document.getElementById('brush-size');
+    const toastContainer = document.getElementById('toast-container');
+    const brushCursor = document.getElementById('brush-cursor');
 
     /**
      * Initialization
@@ -607,6 +747,8 @@
         setupToolbar();
         renderNotebookList();
         setupCanvasEvents();
+        setupKeyboardShortcuts();
+        setupTheme();
         
         // Initial Tool
         setTool('pen');
@@ -624,12 +766,19 @@
     }
 
     /**
-     * Drawing Engine
+     * Drawing Engine (Pointer Events for Pressure)
      */
     function setupCanvasEvents() {
+        // Pointer Events unify Mouse, Touch, and Pen
+        
         const startDraw = (e) => {
             if (e.target.tagName === 'TEXTAREA') return; 
-            e.preventDefault();
+            
+            // Only primary button
+            if (e.buttons !== 1) return;
+
+            e.preventDefault(); // Stop touch scrolling
+            canvas.setPointerCapture(e.pointerId);
             
             if (state.currentTool === 'text') {
                 const pos = getPos(e);
@@ -645,44 +794,69 @@
             state.startY = pos.y;
             
             ctx.beginPath();
+            
+            // Initial move for dot drawing
             ctx.moveTo(pos.x, pos.y);
             
-            setupBrushStyle();
-            
+            // Reset points for curve
             state.points = [pos];
             
+            // Save state for shapes
             if (['rect', 'circle', 'line'].includes(state.currentTool)) {
                 state.snapshot = ctx.getImageData(0, 0, canvas.width, canvas.height);
             }
         };
 
         const moveDraw = (e) => {
+            // Cursor Update (Visual Only)
+            updateCursor(e);
+
             if (!state.isDrawing) return;
             e.preventDefault();
             
             const pos = getPos(e);
 
             if (['rect', 'circle', 'line'].includes(state.currentTool)) {
+                // Restore & Redraw Ghost
                 ctx.putImageData(state.snapshot, 0, 0);
+                setupShapeStyle(); 
                 drawShapePreview(pos);
             } else {
-                state.points.push(pos);
+                // Freehand Drawing with Pressure
+                
+                // Pressure Normalization (0.5 default for mouse, 0-1 for pen)
+                let pressure = e.pressure;
+                if (e.pointerType === 'mouse' && pressure === 0) pressure = 0.5;
+                if (e.pointerType === 'touch') pressure = 0.5; // Touch usually 0.5 or 1
+
+                state.points.push({ x: pos.x, y: pos.y, pressure: pressure });
+
                 if (state.points.length > 2) {
-                    const p1 = state.points[state.points.length - 3];
-                    const p2 = state.points[state.points.length - 2];
+                    const lastPt = state.points[state.points.length - 1];
+                    const prevPt = state.points[state.points.length - 2];
+                    const prevPrevPt = state.points[state.points.length - 3];
+
                     const midPoint = {
-                        x: (p1.x + p2.x) / 2,
-                        y: (p1.y + p2.y) / 2
+                        x: (prevPrevPt.x + prevPt.x) / 2,
+                        y: (prevPrevPt.y + prevPt.y) / 2
                     };
                     
+                    const endPoint = {
+                        x: (prevPt.x + lastPt.x) / 2,
+                        y: (prevPt.y + lastPt.y) / 2
+                    };
+
+                    setupBrushStyle(prevPt.pressure); // Dynamic width based on pressure
+
                     if(state.currentTool === 'eraser') {
-                        ctx.lineTo(pos.x, pos.y);
-                        ctx.stroke();
+                         ctx.lineTo(pos.x, pos.y);
+                         ctx.stroke();
                     } else {
-                        ctx.quadraticCurveTo(p1.x, p1.y, midPoint.x, midPoint.y);
-                        ctx.stroke();
+                        // Quadratic Curve for smoothness
                         ctx.beginPath();
                         ctx.moveTo(midPoint.x, midPoint.y);
+                        ctx.quadraticCurveTo(prevPt.x, prevPt.y, endPoint.x, endPoint.y);
+                        ctx.stroke();
                     }
                 }
             }
@@ -690,12 +864,14 @@
 
         const endDraw = (e) => {
             if (!state.isDrawing) return;
+            
+            canvas.releasePointerCapture(e.pointerId);
             state.isDrawing = false;
             
             if (['rect', 'circle', 'line'].includes(state.currentTool)) {
                 const pos = getPos(e);
-                ctx.putImageData(state.snapshot, 0, 0);
-                setupBrushStyle(); 
+                ctx.putImageData(state.snapshot, 0, 0); // Clear ghost
+                setupShapeStyle(); // Final stroke
                 drawShapePreview(pos);
             } else {
                 ctx.closePath();
@@ -704,69 +880,103 @@
             saveToCurrentPage();
         };
 
-        canvas.addEventListener('mousedown', startDraw);
-        canvas.addEventListener('mousemove', moveDraw);
-        canvas.addEventListener('mouseup', endDraw);
-        canvas.addEventListener('mouseout', endDraw);
-
-        canvas.addEventListener('touchstart', startDraw, { passive: false });
-        canvas.addEventListener('touchmove', moveDraw, { passive: false });
-        canvas.addEventListener('touchend', endDraw);
+        // Pointer Events replace mouse/touch
+        canvas.addEventListener('pointerdown', startDraw);
+        canvas.addEventListener('pointermove', moveDraw);
+        canvas.addEventListener('pointerup', endDraw);
+        canvas.addEventListener('pointerleave', (e) => {
+             brushCursor.style.display = 'none';
+             endDraw(e);
+        });
+        
+        // Hide cursor when leaving canvas wrapper
+        canvasWrapper.addEventListener('mouseenter', () => brushCursor.style.display = 'block');
+        canvasWrapper.addEventListener('mouseleave', () => brushCursor.style.display = 'none');
     }
 
-    // UPDATED: Get position logic that respects CSS sizing/zoom
     function getPos(e) {
         const rect = canvas.getBoundingClientRect();
-        const clientX = e.touches ? e.touches[0].clientX : e.clientX;
-        const clientY = e.touches ? e.touches[0].clientY : e.clientY;
-        
-        // This automatically handles the zoom because rect.width changes
-        // but canvas.width stays the same.
+        // Calculate scale in case of Zoom
         const scaleX = canvas.width / rect.width;
         const scaleY = canvas.height / rect.height;
 
         return {
-            x: (clientX - rect.left) * scaleX,
-            y: (clientY - rect.top) * scaleY
+            x: (e.clientX - rect.left) * scaleX,
+            y: (e.clientY - rect.top) * scaleY
         };
     }
 
-    function setupBrushStyle() {
+    function updateCursor(e) {
+        if(state.currentTool === 'text') {
+            brushCursor.style.display = 'none';
+            canvas.style.cursor = 'text';
+            return;
+        }
+        
+        // Calculate visual size of cursor based on zoom
+        const baseSize = parseInt(brushSizeInput.value, 10);
+        let visualSize = baseSize;
+        
+        // Highlighters/Erasers are visually larger in logic
+        if(state.currentTool === 'highlighter') visualSize *= 6;
+        if(state.currentTool === 'eraser') visualSize *= 5;
+        
+        // Apply Canvas Zoom scale to cursor size
+        visualSize = visualSize * state.scale;
+
+        brushCursor.style.width = visualSize + 'px';
+        brushCursor.style.height = visualSize + 'px';
+        brushCursor.style.left = e.clientX + 'px';
+        brushCursor.style.top = e.clientY + 'px';
+        brushCursor.style.display = 'block';
+        canvas.style.cursor = 'none';
+    }
+
+    function setupBrushStyle(pressure = 0.5) {
         ctx.lineCap = 'round';
         ctx.lineJoin = 'round';
         ctx.globalCompositeOperation = 'source-over';
         
+        const baseSize = parseInt(brushSizeInput.value, 10);
+        
+        // Dynamic Width Formula
+        // Pressure usually 0 to 1. 0.5 is neutral.
+        const dynamicWidth = baseSize * (0.5 + pressure); 
+
         switch (state.currentTool) {
             case 'pen':
                 ctx.strokeStyle = state.currentColor;
-                ctx.lineWidth = 2;
+                ctx.lineWidth = dynamicWidth;
                 ctx.globalAlpha = 1;
                 break;
             case 'pencil':
                 ctx.strokeStyle = state.currentColor;
-                ctx.lineWidth = 1;
+                ctx.lineWidth = dynamicWidth * 0.8; 
                 ctx.globalAlpha = 0.8;
+                // Pencil texture simulation could go here
                 break;
             case 'highlighter':
                 ctx.globalCompositeOperation = 'multiply'; 
                 ctx.strokeStyle = state.currentColor;
-                ctx.lineWidth = 20;
-                ctx.globalAlpha = 0.5;
+                ctx.lineWidth = baseSize * 6; // Fixed width for highlighter usually better
+                ctx.globalAlpha = 0.4;
                 ctx.lineCap = 'square';
                 break;
             case 'eraser':
                 ctx.globalCompositeOperation = 'destination-out';
-                ctx.lineWidth = 30;
-                ctx.globalAlpha = 1;
-                break;
-            case 'rect':
-            case 'circle':
-            case 'line':
-                ctx.strokeStyle = state.currentColor;
-                ctx.lineWidth = 2;
+                ctx.lineWidth = baseSize * 5;
                 ctx.globalAlpha = 1;
                 break;
         }
+    }
+    
+    function setupShapeStyle() {
+        ctx.lineCap = 'round';
+        ctx.lineJoin = 'round';
+        ctx.globalCompositeOperation = 'source-over';
+        ctx.strokeStyle = state.currentColor;
+        ctx.lineWidth = parseInt(brushSizeInput.value, 10);
+        ctx.globalAlpha = 1;
     }
 
     function drawShapePreview(currentPos) {
@@ -800,8 +1010,8 @@
         input.style.top = (rect.top + y * scaleX) + 'px'; 
         input.style.color = state.currentColor;
         
-        // Scale font size visually to match zoom
-        const fontSize = 20 * state.scale; 
+        const baseSize = parseInt(brushSizeInput.value, 10);
+        const fontSize = Math.max(16, baseSize * 6) * state.scale; 
         input.style.fontSize = `${fontSize}px`;
         
         document.body.appendChild(input);
@@ -810,14 +1020,15 @@
         const saveText = () => {
             if (input.value.trim()) {
                 saveStateToHistory();
-                ctx.font = '20px Inter, sans-serif'; // Draw at true canvas scale
+                const drawSize = Math.max(16, baseSize * 6);
+                ctx.font = `${drawSize}px Inter, sans-serif`; 
                 ctx.fillStyle = state.currentColor;
                 ctx.globalCompositeOperation = 'source-over';
                 ctx.globalAlpha = 1;
                 
                 const lines = input.value.split('\n');
                 lines.forEach((line, i) => {
-                    ctx.fillText(line, x, y + 20 + (i * 24));
+                    ctx.fillText(line, x, y + drawSize + (i * (drawSize + 5)));
                 });
                 saveToCurrentPage();
             }
@@ -834,7 +1045,7 @@
     }
 
     /**
-     * UI Logic
+     * UI Logic & Themes
      */
     function setupToolbar() {
         const tools = ['pen', 'pencil', 'highlighter', 'eraser', 'text', 'rect', 'circle', 'line'];
@@ -844,6 +1055,7 @@
 
         document.getElementById('action-undo').addEventListener('click', undo);
         document.getElementById('action-download').addEventListener('click', downloadCanvas);
+        document.getElementById('theme-toggle').addEventListener('click', toggleTheme);
         
         patternSelect.addEventListener('change', (e) => {
             canvas.setAttribute('data-pattern', e.target.value);
@@ -861,6 +1073,7 @@
         document.getElementById('prev-page').addEventListener('click', () => changePage(-1));
         document.getElementById('next-page').addEventListener('click', () => changePage(1));
         document.getElementById('add-page').addEventListener('click', addNewPage);
+        document.getElementById('clear-page').addEventListener('click', clearPage);
 
         // Zoom Controls
         document.getElementById('zoom-in').addEventListener('click', () => updateZoom(0.1));
@@ -868,11 +1081,62 @@
         document.getElementById('zoom-fit').addEventListener('click', fitToScreen);
     }
 
+    function setupTheme() {
+        const savedTheme = localStorage.getItem('infinityNoteTheme');
+        if (savedTheme === 'dark') {
+            document.body.classList.add('dark-mode');
+            state.isDarkMode = true;
+        }
+    }
+
+    function toggleTheme() {
+        state.isDarkMode = !state.isDarkMode;
+        document.body.classList.toggle('dark-mode');
+        localStorage.setItem('infinityNoteTheme', state.isDarkMode ? 'dark' : 'light');
+        showToast(state.isDarkMode ? "Dark Mode Enabled" : "Light Mode Enabled");
+    }
+
+    function setupKeyboardShortcuts() {
+        document.addEventListener('keydown', (e) => {
+            if(e.target.tagName === 'TEXTAREA' || e.target.tagName === 'INPUT') return;
+
+            // Tools
+            if(e.key.toLowerCase() === 'p') setTool('pen');
+            if(e.key.toLowerCase() === 'b') setTool('pencil');
+            if(e.key.toLowerCase() === 'h') setTool('highlighter');
+            if(e.key.toLowerCase() === 'e') setTool('eraser');
+            if(e.key.toLowerCase() === 't') setTool('text');
+            if(e.key.toLowerCase() === 's') setTool('rect'); 
+            if(e.key.toLowerCase() === 'c') setTool('circle');
+            if(e.key.toLowerCase() === 'l') setTool('line');
+
+            // Undo
+            if((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'z') {
+                e.preventDefault();
+                undo();
+            }
+
+            // Brush Size
+            if(e.key === '[') {
+                brushSizeInput.value = Math.max(parseInt(brushSizeInput.min), parseInt(brushSizeInput.value) - 1);
+                showToast(`Brush Size: ${brushSizeInput.value}`);
+            }
+            if(e.key === ']') {
+                brushSizeInput.value = Math.min(parseInt(brushSizeInput.max), parseInt(brushSizeInput.value) + 1);
+                showToast(`Brush Size: ${brushSizeInput.value}`);
+            }
+        });
+    }
+
     function setTool(toolName) {
         state.currentTool = toolName;
         document.querySelectorAll('.tool-btn').forEach(b => b.classList.remove('active'));
         document.getElementById(`tool-${toolName}`).classList.add('active');
         updatePalette();
+        
+        let label = toolName.charAt(0).toUpperCase() + toolName.slice(1);
+        if(toolName === 'rect') label = 'Rectangle';
+        showToast(`Tool: ${label}`);
     }
 
     function updatePalette() {
@@ -899,43 +1163,42 @@
         });
     }
 
+    function showToast(message) {
+        const toast = document.createElement('div');
+        toast.className = 'toast';
+        toast.innerText = message;
+        toastContainer.appendChild(toast);
+        setTimeout(() => {
+            if(toastContainer.contains(toast)) toastContainer.removeChild(toast);
+        }, 2000);
+    }
+
     /**
      * Zoom Logic
      */
     function updateZoom(delta) {
         let newScale = state.scale + delta;
-        // Clamp scale between 0.1 (10%) and 3.0 (300%)
         newScale = Math.min(Math.max(newScale, 0.1), 3.0);
         setZoom(newScale);
     }
 
     function setZoom(scaleLevel) {
         state.scale = scaleLevel;
-        
-        // We use style.width/height instead of transform to allow browser scrollbars to work naturally
         canvas.style.width = `${CONFIG.canvasWidth * state.scale}px`;
         canvas.style.height = `${CONFIG.canvasHeight * state.scale}px`;
-        
         zoomDisplay.innerText = `${Math.round(state.scale * 100)}%`;
     }
 
     function fitToScreen() {
-        // Calculate padding (40px on sides inside wrapper)
         const availableWidth = canvasWrapper.clientWidth - 80; 
         const availableHeight = canvasWrapper.clientHeight - 80;
         
         const scaleW = availableWidth / CONFIG.canvasWidth;
         const scaleH = availableHeight / CONFIG.canvasHeight;
         
-        // Fit completely visible (min) or just fit width?
-        // Usually fit width is better for writing, fit entire page better for reviewing.
-        // Let's go with Fit Height to ensure whole page visible, maxing out at Fit Width
         let fitScale = Math.min(scaleW, scaleH);
-        
-        // Don't let it zoom in too crazy if screen is huge, cap at 1.0 or slightly more
-        // Actually for small screens we want it small.
-        
         setZoom(fitScale);
+        showToast("Fit to Screen");
     }
 
     /**
@@ -980,6 +1243,7 @@
         state.notebooks.push(newNb);
         saveData();
         switchNotebook(newNb.id);
+        showToast("Notebook Created");
     }
 
     function switchNotebook(id) {
@@ -987,7 +1251,6 @@
         state.activeNotebookId = id;
         
         const nb = getCurrentNotebook();
-        // Load first page
         loadPage(nb.pages[0].id);
         renderNotebookList();
         
@@ -1010,6 +1273,16 @@
         saveData();
         loadPage(newPage.id);
         renderNotebookList(); 
+        showToast("New Page Added");
+    }
+
+    function clearPage() {
+        if(confirm("Are you sure you want to clear this page?")) {
+            saveStateToHistory();
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            saveToCurrentPage();
+            showToast("Page Cleared");
+        }
     }
 
     function changePage(delta) {
@@ -1082,6 +1355,7 @@
                 ctx.clearRect(0, 0, canvas.width, canvas.height);
                 ctx.drawImage(img, 0, 0);
             };
+            showToast("Undo");
         } else {
              ctx.clearRect(0, 0, canvas.width, canvas.height);
         }
@@ -1136,6 +1410,7 @@
         tempCtx.drawImage(canvas, 0, 0);
         link.href = tempCanvas.toDataURL();
         link.click();
+        showToast("Image Saved");
     }
 
     /* --- Event Listeners --- */
