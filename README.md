@@ -75,27 +75,4 @@ Ctrl / Cmd + Z → Undo
 [  ] → Brush Size
 
 
-🛠️ Tech Stack
 
-HTML5 Canvas
-
-Vanilla JavaScript
-
-Modern CSS (Glassmorphism + Dark Mode)
-
-Lucide Icons
-
-LocalStorage API
-
-📂 Project Structure
-InfinityNote/
-│
-├── index.html
-├── README.md
-
-👨‍💻 Author
-
-Vivek Yadav (Rahagir)
-🔗 GitHub: https://github.com/vivek-rahagir07
-
-🔗 LinkedIn: https://www.linkedin.com/in/vivek-yadav-1142213a0/
